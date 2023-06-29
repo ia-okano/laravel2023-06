@@ -15,22 +15,49 @@ use Illuminate\Support\Facades\Storage;
 /* 画像アップロード用のコントローラを読み込み */
 use App\Http\Controllers\UploadImageController;
 
-
-Route::get('/', function () {    return view('welcome');});
+Route::get('/', function(){
+    echo<<<_HTML_
+    <a href="/MessageBoard/index">MessageBoard</a>
+    <hr>
+    <a href="/coach">coach</a>
+    <a href="/coach/add">coach/add</a>
+    <a href="/coach/edit/1">coach/edit/1</a> |
+    <a href="/team">team</a>
+    <a href="/team/add">team/add</a>
+    <a href="/team/edit/1">team/edit/1</a> |
+    <a href="/player">player</a>
+    <a href="/player/add">player/add</a>
+    <a href="/player/edit/1">player/edit/1</a> |
+    <a href="/position">position</a>
+    <a href="/position/add">position/add</a>
+    <a href="/position/edit/1">position/edit/1</a> |
+    <hr>
+    <a href="/upload_form">upload_form</a>
+    <a href="/upload_images">upload_images</a> |
+    <hr>
+    <a href="/register">register</a> |
+    <a href="/users_only">users_only</a> |
+    <a href="/profile">profile</a> |
+    <a href="/tailwind-sample">tailwind-sample</a>
+    <hr>
+    <a href="/injection-test-login-valnerable">SQLインジェクション攻撃が生じる</a> |
+    <a href="/csrf-login-valnerable">CSRF攻撃が生じる</a> |
+    <a href="/xss-test-valnerable">XSS攻撃が生じる</a> |
+_HTML_;
+});
 
 Route::get('/MessageBoard/add', [MessageBoardController::class, 'add']);
 Route::post('/MessageBoard/confirm', [MessageBoardController::class, 'confirm']);
-Route::post('/MessageBoard/complete', [MessageBoardController::class, 'complete']);
+Route::post('/MessageBoard/complete', [MessageBoardController::class, 'confirm']);
 Route::get('/MessageBoard/index', [MessageBoardController::class, 'index']);
-Route::post('/MessageBoard/delete', [MessageBoardController::class, 'delete']);
-Route::post('/MessageBoard/edit', [MessageBoardController::class, 'edit']);
-Route::post('/MessageBoard/update', [MessageBoardController::class, 'update']);
-
+Route::get('/MessageBoard/admin', [MessageBoardController::class, 'admin']);
+Route::post('/MessageBoard/delete/{id}', [MessageBoardController::class, 'delete']);
+Route::get('/MessageBoard/edit/{id}', [MessageBoardController::class, 'edit']);
+Route::post('/MessageBoard/update/{id}', [MessageBoardController::class, 'update']);
 /////////////////////////////////////////////////////////////////////////////////
 
-/* Coachのデータを一覧表示する
- * (表示したいだけなので、Controllerを作らずルータ内で処理する)
- */
+
+/* Coachのデータを一覧表示する */
 Route::get('/coach', function(){
     /* Coach モデルを通じて、coaches テーブルの内容をすべて取得 */
     $all_coaches = Coach::all();
@@ -42,13 +69,9 @@ Route::get('/coach', function(){
             print("<p>監督名： {$coach->name} (担当チーム名： なし)</p>");
         }
     }
-})->name('coach');
+});
 
-
-/* ファイルの末尾に、以下を追記する */
-/* Teamのデータを一覧表示する
- * (表示したいだけなので、Controllerを作らずルータ内で処理する)
- */
+/* Teamのデータを一覧表示する */
 Route::get('/team', function(){
     /* Team モデルを通じて、teams テーブルのデータをすべて取得 */
     $all_teams = Team::all();
@@ -72,9 +95,8 @@ Route::get('/team', function(){
                 print("<li>{$player->name}</li>");
             }
         print('</ul>');
-        print('<a href="http://localhost/logout">ログアウト</a>');
     }
-})->middleware('auth')->name('team');
+});
 
 Route::get('player', function(){
     /* Player モデルを通じて、players テーブルのデータをすべて取得 */
@@ -89,16 +111,12 @@ Route::get('player', function(){
         print("<h2>プレイヤー名： {$player->name} (所属チーム: {$team})</h2>");
         print("<p>得意ポジション</p>");
         print('<ul>');
-            /* $player->positionsで、関連付けされたpositions テーブルのレコードの内容を取得できる
-            * Player モデルとPosition モデルのリレーションは多対多(belongsToMany)
-            * 複数データが取得されるため、foreachでループしてひとつずつ処理する
-            */
             foreach($player->positions as $position){
                 print("<li>{$position->name}</li>");
             }
         print('</ul>');
     }
-})->name('player');
+});
 
 Route::get('position', function(){
     /* Position モデルを通じて、positions テーブルのデータをすべて取得 */
@@ -119,19 +137,10 @@ Route::get('position', function(){
         print('</ul>');
     }
 });
-Route::prefix('team/edit')->group(function () {
-    // Route::get('/team/edit/{id}', [TeamController::class, 'edit']);
-    // Route::post('/team/edit/{id}', [TeamController::class, 'update']);
-    // 　　↓
-    Route::get('{id}', [TeamController::class, 'edit']);
-    Route::post('{id}', [TeamController::class, 'update']);
-});
-
-Route::prefix('player')->group(function(){
-    Route::get('edit/{id}', [PlayerController::class, 'edit']);
-    Route::post('edit/{id}', [PlayerController::class, 'update']);
-});
-
+Route::get('/team/edit/{id}', [TeamController::class, 'edit']);
+Route::post('/team/edit/{id}', [TeamController::class, 'update']);
+Route::get('/player/edit/{id}', [PlayerController::class, 'edit']);
+Route::post('/player/edit/{id}', [PlayerController::class, 'update']);
 
 Route::group(['middleware' => ['auth']], function () {
     Route::get('/coach/edit/{id}', [CoachController::class, 'edit']);
@@ -139,20 +148,21 @@ Route::group(['middleware' => ['auth']], function () {
 
     Route::get('/position/edit/{id}', [PositionController::class, 'edit']);
     Route::post('/position/edit/{id}', [PositionController::class, 'update']);
-
-    ///
-    Route::get('/team/add', [TeamController::class, 'add']);
-    Route::post('/team/add', [TeamController::class, 'complete']);
-
-    Route::get('/player/add', [PlayerController::class, 'add']);
-    Route::post('/player/add', [PlayerController::class, 'complete']);
-
-    Route::get('/coach/add', [CoachController::class, 'add']);
-    Route::post('/coach/add', [CoachController::class, 'complete']);
-
-    Route::get('/position/add', [PositionController::class, 'add']);
-    Route::post('/position/add', [PositionController::class, 'complete']);
 });
+
+///
+Route::get('/team/add', [TeamController::class, 'add']);
+Route::post('/team/add', [TeamController::class, 'complete']);
+
+Route::get('/player/add', [PlayerController::class, 'add']);
+Route::post('/player/add', [PlayerController::class, 'complete']);
+
+Route::get('/coach/add', [CoachController::class, 'add']);
+Route::post('/coach/add', [CoachController::class, 'complete']);
+
+Route::get('/position/add', [PositionController::class, 'add']);
+Route::post('/position/add', [PositionController::class, 'complete']);
+
 /////////////////////////////////////////////
 
 
